@@ -2,43 +2,60 @@
 #include <iostream>
 #include <string>
 #include <windows.h>
+#include <stdio.h>
+#include <regex>
+#include <ctype.h>
 
 using namespace std;
 using namespace boost::filesystem;
 
-string getCurrentProgramFolder()
+string checkAndFixFileName(string fileName)
 {
-	vector<wchar_t> pathBuf;
-	DWORD copied = 0;
-	do {
-		pathBuf.resize(pathBuf.size() + MAX_PATH);
-		copied = GetModuleFileName(0, &pathBuf.at(0), pathBuf.size());
-	} while (copied >= pathBuf.size());
+	string fixedFileName;
 
-	pathBuf.resize(copied);
+	for (unsigned int i = 0; i < fileName.length(); i++)
+	{
+		char previousChar;
+		char currentChar = fileName[i];
 
-	string path(pathBuf.begin(), pathBuf.end());
+		if ((i == 0) && (islower(currentChar)))
+		{
+			fixedFileName += toupper(currentChar);
+			previousChar = toupper(currentChar);
+			continue;
+		}
+		else if ((isupper(previousChar)) && (isupper(currentChar)))
+		{
+			fixedFileName += tolower(currentChar);
+			previousChar = tolower(currentChar);
+			continue;
+		}
+	}
 
-	return path; // TODO: Regex username with %userprofile% to workaround usernames
+	return fixedFileName;
 }
 
-int main()
+int main(int argc, char *argv[])
 {
 	// Current folder path
-	path currentProgramPath = getCurrentProgramFolder();
-	directory_iterator end_iter;
+	path currentProgramExecutablePath = argv[0];
+	path currentProgramFolderPath = currentProgramExecutablePath.remove_filename();
 
-	// Print current exe location
-	cout << getCurrentProgramFolder() << endl;
+	directory_iterator end_iter;
 
 	// Store all file paths in folder
 	vector<path> folderFilesPaths;
-	
+
+	// Regex. Group 1: File name
+	regex getFileNameRegex("(.+\\\\+)(.+)(\\..+)");
+
 	try
 	{
-		if (exists(currentProgramPath) && is_directory(currentProgramPath))
+		// Check if current path exists and it's directory.
+		if (exists(currentProgramFolderPath) && is_directory(currentProgramFolderPath))
 		{
-			for (directory_iterator dir_iter(currentProgramPath); dir_iter != end_iter; ++dir_iter)
+			// For each regular file put the path to the vector<path>
+			for (directory_iterator dir_iter(currentProgramFolderPath); dir_iter != end_iter; ++dir_iter)
 			{
 				if (is_regular_file(dir_iter->status()))
 				{
@@ -46,10 +63,18 @@ int main()
 				}
 			}
 		}
-	
+
+		// Print current collected paths
 		for each (path item in folderFilesPaths)
 		{
 			cout << item.string() << endl;
+			string pathAsString = item.string();
+			smatch getFileNameMatch;
+			regex_search(pathAsString, getFileNameMatch, getFileNameRegex);
+
+			cout << getFileNameMatch[2] << endl;
+
+
 		}
 	}
 	catch (filesystem_error &e)
