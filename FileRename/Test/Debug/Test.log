@@ -1,0 +1,4 @@
+﻿  Main.cpp
+c:\users\даниел\documents\github\cpp-filerename\filerename\test\main.cpp(10): warning C4018: '<': signed/unsigned mismatch
+  Test.vcxproj -> C:\Users\Даниел\Documents\GitHub\Cpp-FileRename\FileRename\Debug\Test.exe
+  Test.vcxproj -> C:\Users\Даниел\Documents\GitHub\Cpp-FileRename\FileRename\Debug\Test.pdb (Full PDB)

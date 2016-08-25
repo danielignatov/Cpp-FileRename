@@ -1,4 +1,2 @@
-﻿cl : Command line warning D9028: minimal rebuild failure, reverting to normal build
-  Main.cpp
-  FileRename.vcxproj -> C:\Users\Даниел\Documents\GitHub\Cpp-FileRename\FileRename\Debug\FileRename.exe
+﻿  FileRename.vcxproj -> C:\Users\Даниел\Documents\GitHub\Cpp-FileRename\FileRename\Debug\FileRename.exe
   FileRename.vcxproj -> C:\Users\Даниел\Documents\GitHub\Cpp-FileRename\FileRename\Debug\FileRename.pdb (Full PDB)

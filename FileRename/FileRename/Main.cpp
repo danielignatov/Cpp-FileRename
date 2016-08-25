@@ -7,12 +7,13 @@
 #include <ctype.h>
 #include <locale.h>
 
-using namespace std;
 using namespace boost::filesystem;
 
-string checkAndFixFileName(string fileName)
+std::locale loc("");
+
+std::string checkAndFixFileName(std::string fileName)
 {
-	string fixedFileName = "";
+	std::string fixedFileName = "";
 	char previousChar = '*';
 	char currentChar = '*';
 
@@ -21,7 +22,7 @@ string checkAndFixFileName(string fileName)
 		currentChar = fileName[i];
 
 		// If first character is lower make him upper
-		if ((i == 0) && (islower(currentChar)))
+		if ((i == 0) && (islower(currentChar, loc)))
 		{
 			fixedFileName += toupper(currentChar);
 			previousChar = toupper(currentChar);
@@ -30,7 +31,7 @@ string checkAndFixFileName(string fileName)
 		// If previous character is upper and current character is upper make current lower
 		// OR
 		// If previous character is lower and current character is upper make current lower
-		else if (((isupper(previousChar)) && (isupper(currentChar))) || ((islower(previousChar)) && (isupper(currentChar))))
+		else if (((isupper(previousChar, loc)) && (isupper(currentChar, loc))) || ((islower(previousChar, loc)) && (isupper(currentChar, loc))))
 		{
 			fixedFileName += tolower(currentChar);
 			previousChar = tolower(currentChar);
@@ -42,14 +43,14 @@ string checkAndFixFileName(string fileName)
 			char nextChar = fileName[i + 1];
 
 			// If current character is upper and next character is space make current character lower
-			if ((isupper(currentChar)) && (nextChar == ' '))
+			if ((isupper(currentChar, loc)) && (nextChar == ' '))
 			{
 				fixedFileName += tolower(currentChar);
 				previousChar = tolower(currentChar);
 				continue;
 			}
 			// If current character is space and next character is lower make next upper and skip iteration
-			else if ((currentChar == ' ') && (islower(nextChar)))
+			else if ((currentChar == ' ') && (islower(nextChar, loc)))
 			{
 				fixedFileName += currentChar;
 				fixedFileName += toupper(nextChar);
@@ -74,8 +75,8 @@ string checkAndFixFileName(string fileName)
 
 int main(int argc, char *argv[])
 {
-	// Setting locale
-	std::locale::global(std::locale(""));  // (*)
+	// Setting locale	
+	std::locale::global(loc);  // (*)
 	std::wcout.imbue(std::locale());
 	auto& f = std::use_facet<std::ctype<wchar_t>>(std::locale());
 
@@ -86,10 +87,11 @@ int main(int argc, char *argv[])
 	directory_iterator end_iter;
 
 	// Store all file paths in folder
-	vector<path> folderFilesPaths;
+	std::vector<path> folderFilesPaths;
+	std::vector<path> newFolderFilesPaths;
 
 	// Regex. Group 1: File name
-	regex getFileNameRegex("(.+\\\\+)(.+)(\\..+)");
+	std::regex getFileNameRegex("(.+\\\\+)(.+)(\\..+)");
 
 	try
 	{
@@ -99,28 +101,37 @@ int main(int argc, char *argv[])
 			// For each regular file put the path to the vector<path>
 			for (directory_iterator dir_iter(currentProgramFolderPath); dir_iter != end_iter; ++dir_iter)
 			{
-				if (is_regular_file(dir_iter->status()))
+				if ((is_regular_file(dir_iter->status())))
 				{
 					folderFilesPaths.push_back(dir_iter->path());
 				}
 			}
 		}
 
-		// Print current collected paths
+		// Write future paths
 		for each (path item in folderFilesPaths)
 		{
-			cout << item.string() << endl;
-			string pathAsString = item.string();
-			smatch getFileNameMatch;
-			regex_search(pathAsString, getFileNameMatch, getFileNameRegex);
+			std::string pathAsString = item.string();
+			std::smatch getFileNameMatch;
+			std::regex_search(pathAsString, getFileNameMatch, getFileNameRegex);
 
-			cout << getFileNameMatch[2] << endl;
+			// getFileNameMatch[1] - Path before file name
+			// getFileNameMatch[2] - File name
+			// getFileNameMatch[3] - File name extension
+
+			std::string newFilePathAsString;
+			newFilePathAsString += getFileNameMatch[1];
+			newFilePathAsString += checkAndFixFileName(getFileNameMatch[2]);
+			newFilePathAsString += getFileNameMatch[3];
+			newFolderFilesPaths.push_back(newFilePathAsString);
 		}
 
-		// Test method
-		// It break here when i enter cirylic letters, need to add better isupper islowr maybe
-		std::string a = checkAndFixFileName("ÀÄÄÄÄÄÄ      äåëèâåÐ");
-		std::cout << a;
+		// Rename files in current folder
+		for (unsigned int i = 0; i < folderFilesPaths.size(); i++)
+		{
+			rename(folderFilesPaths[i], newFolderFilesPaths[i]);
+			std::cout << newFolderFilesPaths[i] << std::endl;
+		}
 	}
 	catch (filesystem_error &e)
 	{
